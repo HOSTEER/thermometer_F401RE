@@ -1,3 +1,18 @@
+#For CubeIDE
+*.ld
+*.mxproject
+*/Drivers
+*/Debug
+*/.settings/*
+*/.metadata/*
+!*/.settings/org.eclipse.core.resources.prefs
+*/Core/Src/*
+!*/Core/Src/main.c
+!*/Core/Src/syscalls.c
+!*/Core/Src/sysmem.c
+*/Core/Inc/*
+!*/Core/Inc/main.h
+
 # Prerequisites
 *.d
 

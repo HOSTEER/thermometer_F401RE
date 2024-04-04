@@ -117,13 +117,7 @@ uint8_t Check_Response (void){
 		if ((HAL_GPIO_ReadPin (DHT11_GPIO_Port, DHT11_Pin))) Response = 1;
 		else Response = -1;
 	}
-	while (HAL_GPIO_ReadPin (DHT11_GPIO_Port, DHT11_Pin)){
-		static uint16_t counter=0;
-		counter++;
-		if(counter > 65533){
-			return Response;
-		}
-	}  // wait for the pin to go low
+	while ((HAL_GPIO_ReadPin (DHT11_GPIO_Port, DHT11_Pin)));   // wait for the pin to go low
 	return Response;
 }
 
@@ -137,13 +131,7 @@ uint8_t DHT11_Read (void){
 			i&= ~(1<<(7-j));   // write 0
 		}
 		else i|= (1<<(7-j));  // if the pin is high, write 1
-		while (HAL_GPIO_ReadPin (DHT11_GPIO_Port, DHT11_Pin)){
-			static uint16_t counter=0;
-			counter++;
-			if(counter > 65533){
-				return i;
-			}
-		} // wait for the pin to go low
+		while ((HAL_GPIO_ReadPin (DHT11_GPIO_Port, DHT11_Pin)));  // wait for the pin to go low
 	}
 	return i;
 }

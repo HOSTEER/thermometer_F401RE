@@ -52,7 +52,7 @@
 /* USER CODE BEGIN PV */
 TaskHandle_t h_lcd_task = NULL;
 TaskHandle_t h_DHT11_task = NULL;
-
+uint8_t screen_power = 1;
 
 SemaphoreHandle_t DHT11_sema;
 
@@ -77,16 +77,11 @@ void delay(uint16_t time){
 	while((__HAL_TIM_GET_COUNTER(&htim10))<time);
 }
 
-void lcd_task(void * unused){
-	printf("lcd task launched\r\n");
-	ILI9341_Unselect();
-	ILI9341_Init();
-	ILI9341_FillScreen(ILI9341_WHITE);
-	for(;;){
-		uint8_t display_buf[10];
-		sprintf((char *)display_buf,"%d",TEMP);
-		ILI9341_WriteString(0, 0, (const char *)display_buf, Font_16x26, ILI9341_BLACK, ILI9341_WHITE);
-		xSemaphoreTake(DHT11_sema, portMAX_DELAY);
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
+{
+	if(GPIO_Pin == B1_Pin){
+		HAL_GPIO_TogglePin(LCD_POWER_GPIO_Port, LCD_POWER_Pin);
+		screen_power=!screen_power;
 	}
 }
 
@@ -122,7 +117,13 @@ uint8_t Check_Response (void){
 		if ((HAL_GPIO_ReadPin (DHT11_GPIO_Port, DHT11_Pin))) Response = 1;
 		else Response = -1;
 	}
-	while ((HAL_GPIO_ReadPin (DHT11_GPIO_Port, DHT11_Pin)));   // wait for the pin to go low
+	while (HAL_GPIO_ReadPin (DHT11_GPIO_Port, DHT11_Pin)){
+		static uint16_t counter=0;
+		counter++;
+		if(counter > 65533){
+			return Response;
+		}
+	}  // wait for the pin to go low
 	return Response;
 }
 
@@ -136,7 +137,13 @@ uint8_t DHT11_Read (void){
 			i&= ~(1<<(7-j));   // write 0
 		}
 		else i|= (1<<(7-j));  // if the pin is high, write 1
-		while ((HAL_GPIO_ReadPin (DHT11_GPIO_Port, DHT11_Pin)));  // wait for the pin to go low
+		while (HAL_GPIO_ReadPin (DHT11_GPIO_Port, DHT11_Pin)){
+			static uint16_t counter=0;
+			counter++;
+			if(counter > 65533){
+				return i;
+			}
+		} // wait for the pin to go low
 	}
 	return i;
 }
@@ -144,8 +151,9 @@ uint8_t DHT11_Read (void){
 void DHT11_task(void * unused){
 	printf("DHT11 task launched\r\n");
 	for(;;){
+		vTaskDelay(3000);
 		DHT11_Start();
-		Presence = Check_Response();
+		Check_Response();
 		Rh_byte1 = DHT11_Read();
 		Rh_byte2 = DHT11_Read();
 		Temp_byte1 = DHT11_Read();
@@ -154,10 +162,34 @@ void DHT11_task(void * unused){
 
 		TEMP = Temp_byte1;
 		RH = Rh_byte1;
-		vTaskDelay(250);
 		xSemaphoreGive(DHT11_sema);
 	}
 }
+
+void lcd_task(void * unused){
+	printf("lcd task launched\r\n");
+	uint8_t toggle=0;
+	for(;;){
+		if(screen_power == 0){
+			vTaskDelay(500);
+		}else if(screen_power == 1){
+			ILI9341_Unselect();
+			ILI9341_Init();
+			ILI9341_FillScreen(ILI9341_WHITE);
+			screen_power = 2;
+		}else{
+			xSemaphoreTake(DHT11_sema, portMAX_DELAY);
+			uint8_t display_buf[10];
+			sprintf((char *)display_buf,"%d",TEMP);
+			ILI9341_WriteString(0, 0, (const char *)display_buf, Font_16x26, ILI9341_BLACK, ILI9341_WHITE);
+			if(toggle%2){
+				ILI9341_WriteString(0, 0, (const char *)display_buf, Font_16x26, ILI9341_BLUE, ILI9341_WHITE);
+			}
+			toggle++;
+		}
+	}
+}
+
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -206,7 +238,7 @@ int main(void)
 		printf("Could not create lcd task\r\n");
 		Error_Handler();
 	}
-	ret = xTaskCreate(DHT11_task, "DHT11_task", DEFAULT_STACK_SIZE, NULL, 1, &h_DHT11_task);
+	ret = xTaskCreate(DHT11_task, "DHT11_task", DEFAULT_STACK_SIZE, NULL,1, &h_DHT11_task);
 	if(ret != pdPASS)
 	{
 		printf("Could not create DHT11 task\r\n");

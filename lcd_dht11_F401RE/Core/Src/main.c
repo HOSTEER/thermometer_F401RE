@@ -198,9 +198,9 @@ void stat_task(void * unused){
 	for(uint64_t idx = 0;;idx++){
 		xSemaphoreTake(stat_sema, portMAX_DELAY);
 		average_temp += TEMP;
-		uint64_t is_hour = (idx + 1)%60;
+		uint64_t is_hour = (idx + 1)%3600;
 		if(is_hour == 0){
-			average_by_the_hour[idx/59] = average_temp/60;
+			average_by_the_hour[idx/3599] = average_temp/3600;
 			average_temp = 0;
 		}
 	}

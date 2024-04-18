@@ -30,11 +30,16 @@
 #include <string.h>
 #include "ili9341.h"
 #include "fonts.h"
+#include "ee.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
-
+typedef struct{
+	uint16_t average_temp;
+	uint64_t time_idx;
+	uint16_t average_by_the_hour[10];
+}eeStorage_t;
 /* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
@@ -50,6 +55,8 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
+eeStorage_t ee;
+
 TaskHandle_t h_lcd_task = NULL;
 TaskHandle_t h_DHT11_task = NULL;
 TaskHandle_t h_stat_task = NULL;
@@ -183,9 +190,9 @@ void lcd_task(void * unused){
 			uint16_t first_space = (space_btwn_each_colum/2)-1;
 			uint16_t colum_width = (320 - colum_number*space_btwn_each_colum)/colum_number;
 			uint16_t position_x_step = colum_width + (space_btwn_each_colum/2);
-			uint16_t amplitude = 20;
 			for(int i = first_space; i<ILI9341_WIDTH; i+=position_x_step){
-				ILI9341_FillRectangle(i,ILI9341_HEIGHT-(average_by_the_hour[i/position_x_step]<<2),colum_width,ILI9341_HEIGHT,ILI9341_RED);
+				uint16_t amplitude = ILI9341_HEIGHT-(average_by_the_hour[i/position_x_step]<<2);
+				ILI9341_FillRectangle(i,amplitude,colum_width,ILI9341_HEIGHT,ILI9341_RED);
 			}
 		}
 	}
@@ -246,8 +253,14 @@ int main(void)
   MX_TIM10_Init();
   MX_TIM9_Init();
   /* USER CODE BEGIN 2 */
+  	EE_Init(&ee, sizeof(ee));
 	HAL_TIM_Base_Start(&htim10);
 	BaseType_t ret;
+	/*ee.average_by_the_hour[0]=50;
+	ee.average_temp=35216;
+	ee.time_idx=2800;
+	EE_Write(true);*/
+	EE_Read();
 	DHT11_sema = xSemaphoreCreateBinary();
 	stat_sema = xSemaphoreCreateBinary();
 	ret = xTaskCreate(lcd_task, "lcd_task", DEFAULT_STACK_SIZE, NULL, 2, &h_lcd_task);

@@ -224,19 +224,35 @@ static void ILI9341_WriteChar(uint16_t x, uint16_t y, char ch, FontDef font, uin
     uint32_t i, b, j;
 
     ILI9341_SetAddressWindow(x, y, x+font.width-1, y+font.height-1);
-
-    for(i = 0; i < font.height; i++) {
-        b = font.data[(ch - 32) * font.height + i];
-        for(j = 0; j < font.width; j++) {
-            if((b << j) & 0x8000)  {
-                uint8_t data[] = { color >> 8, color & 0xFF };
-                ILI9341_WriteData(data, sizeof(data));
-            } else {
-                uint8_t data[] = { bgcolor >> 8, bgcolor & 0xFF };
-                ILI9341_WriteData(data, sizeof(data));
-            }
-        }
-    }
+	if(font.height < 51){
+	    for(i = 0; i < font.height; i++) {
+	        b = font.data[(ch - 32) * font.height + i];
+	        for(j = 0; j < font.width; j++) {
+				if((b << j) & 0x8000)  {
+					uint8_t data[] = { color >> 8, color & 0xFF };
+					ILI9341_WriteData(data, sizeof(data));
+				} else {
+					uint8_t data[] = { bgcolor >> 8, bgcolor & 0xFF };
+					ILI9341_WriteData(data, sizeof(data));
+				}
+	        }
+	    }
+	}else{
+	    for(i = 0; i < (font.height<<1); i+=2) {
+			b = font.data[((ch - 32)<<1) * font.height + i];
+			b =b<<16;
+			b |= font.data[((ch - 32)<<1) * font.height + i +1];
+	        for(j = 0; j < font.width; j++) {
+				if((b << j) & 0x80000000)  {
+					uint8_t data[] = { color >> 8, color & 0xFF };
+					ILI9341_WriteData(data, sizeof(data));
+				} else {
+					uint8_t data[] = { bgcolor >> 8, bgcolor & 0xFF };
+					ILI9341_WriteData(data, sizeof(data));
+				}
+	        }
+	    }
+	}
 }
 
 void ILI9341_WriteString(uint16_t x, uint16_t y, const char* str, FontDef font, uint16_t color, uint16_t bgcolor) {

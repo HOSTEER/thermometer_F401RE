@@ -179,10 +179,11 @@ void lcd_task(void * unused){
 		}else{
 			xSemaphoreTake(DHT11_sema, portMAX_DELAY);
 			uint8_t display_buf[10];
+			TEMP = 0;
 			sprintf((char *)display_buf,"%d",TEMP);
-			ILI9341_WriteString(0, 0, (const char *)display_buf, Font_16x26, ILI9341_BLACK, ILI9341_WHITE);
+			//ILI9341_WriteString(0, 0, (const char *)display_buf, Font_16x26, ILI9341_BLACK, ILI9341_WHITE);
 			if(toggle%2){
-				ILI9341_WriteString(0, 0, (const char *)display_buf, Font_16x26, ILI9341_BLUE, ILI9341_WHITE);
+				ILI9341_WriteString(0, 0, (const char *)display_buf, Font_32x52, ILI9341_BLUE, ILI9341_WHITE);
 			}
 			toggle++;
 			uint16_t colum_number = 10;

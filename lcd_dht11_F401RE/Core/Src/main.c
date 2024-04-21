@@ -178,13 +178,15 @@ void lcd_task(void * unused){
 			screen_power = 2;
 		}else{
 			xSemaphoreTake(DHT11_sema, portMAX_DELAY);
+			static uint8_t nb = 0;
+
 			uint8_t display_buf[10];
-			TEMP = 0;
-			sprintf((char *)display_buf,"%d",TEMP);
-			//ILI9341_WriteString(0, 0, (const char *)display_buf, Font_16x26, ILI9341_BLACK, ILI9341_WHITE);
+			sprintf((char *)display_buf,"%d",nb);
+			ILI9341_WriteString(0, 0, (const char *)display_buf, Font_32x52, ILI9341_BLACK, ILI9341_WHITE);
 			if(toggle%2){
 				ILI9341_WriteString(0, 0, (const char *)display_buf, Font_32x52, ILI9341_BLUE, ILI9341_WHITE);
 			}
+			nb++;
 			toggle++;
 			uint16_t colum_number = 10;
 			uint16_t space_btwn_each_colum = 6;

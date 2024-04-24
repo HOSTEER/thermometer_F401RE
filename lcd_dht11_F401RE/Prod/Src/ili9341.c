@@ -237,7 +237,7 @@ static void ILI9341_WriteChar(uint16_t x, uint16_t y, char ch, FontDef font, uin
 				}
 	        }
 	    }
-	}else{
+	}else if(font.height < 103){
 	    for(i = 0; i < (font.height<<1); i+=2) {
 			b = font.data[((ch - 32)<<1) * font.height + i];
 			b =b<<16;

@@ -127,21 +127,36 @@ uint8_t Check_Response (void){
 		if ((HAL_GPIO_ReadPin (DHT11_GPIO_Port, DHT11_Pin))) Response = 1;
 		else Response = -1;
 	}
-	while ((HAL_GPIO_ReadPin (DHT11_GPIO_Port, DHT11_Pin)));   // wait for the pin to go low
+	uint16_t starting_count = __HAL_TIM_GET_COUNTER(&htim9)%5;
+	while ((HAL_GPIO_ReadPin (DHT11_GPIO_Port, DHT11_Pin))){
+		if((__HAL_TIM_GET_COUNTER(&htim9)%5) == ((starting_count+3)%5)){
+			return -1;   // wait for the pin to go low
+		}
+	}
 	return Response;
 }
 
 uint8_t DHT11_Read (void){
 	uint8_t i,j;
 	for (j=0;j<8;j++){
-		while (!(HAL_GPIO_ReadPin (DHT11_GPIO_Port, DHT11_Pin)));   // wait for the pin to go high
+		uint16_t starting_count = __HAL_TIM_GET_COUNTER(&htim9)%5;
+		while (!(HAL_GPIO_ReadPin (DHT11_GPIO_Port, DHT11_Pin))){
+			if((__HAL_TIM_GET_COUNTER(&htim9)%5) == ((starting_count+3)%5)){
+				return -1;   // wait for the pin to go low
+			}
+		}
 		delay (40);   // wait for 40 us
 		if (!(HAL_GPIO_ReadPin (DHT11_GPIO_Port, DHT11_Pin)))   // if the pin is low
 		{
 			i&= ~(1<<(7-j));   // write 0
 		}
 		else i|= (1<<(7-j));  // if the pin is high, write 1
-		while ((HAL_GPIO_ReadPin (DHT11_GPIO_Port, DHT11_Pin)));  // wait for the pin to go low
+		starting_count = __HAL_TIM_GET_COUNTER(&htim9)%5;
+		while ((HAL_GPIO_ReadPin (DHT11_GPIO_Port, DHT11_Pin))){
+			if((__HAL_TIM_GET_COUNTER(&htim9)%5) == ((starting_count+3)%5)){
+				return -1;   // wait for the pin to go low
+			};  // wait for the pin to go low
+		}
 	}
 	return i;
 }
